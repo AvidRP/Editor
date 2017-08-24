@@ -1,100 +1,84 @@
-from Tkinter import *
-#for saving purposes
-import tkFileDialog
-import tkMessageBox
+import wx
+import wx.lib.dialogs
+import wx.stc as stc
+
+# fonts for editor
+faces = {
+    'times' : 'Times New Roman',
+    'hel' : 'Arial',
+    'mono' : 'Courier New',
+    'size' : 10,
+    'size2' : 12,
+    'size3' : 14
+}
+
+class MainWindow(wx.Frame):
+    def __init__(self, parent, title):
+        self.leftMarginWidth = 25
+
+        window = wx.Frame.__init__(self, parent, title=title, size=(800, 600))
+
+        self.control = stc.StyledTextCtrl(self, style=wx.TE_MULTILINE | wx.TE_WORDWRAP)
+
+        self.control.CmdKeyAssign(ord('='), stc.STC_SCMOD_CTRL, stc.STC_CMD_ZOOMIN)
+        self.control.CmdKeyAssign(ord('-'), stc.STC_SCMOD_CTRL, stc.STC_CMD_ZOOMOUT)
+
+        #not showing white space
+        self.control.SetViewWhiteSpace(False)
+        self.control.SetMargins(5,0)
+        self.control.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+        self.control.SetMarginWidth(1, self.leftMarginWidth)
+
+        #this is for the status bar
+        self.CreateStatusBar()
+        self.StatusBar.SetBackgroundColour((220,220, 220))
+
+        #creating the menubar
+        #File menu
+        fileMenu = wx.Menu()
+
+        menuNew = fileMenu.Append(wx.ID_NEW, "&New", "Create new file")
+        menuOpen = fileMenu.Append(wx.ID_OPEN, "&Open", "Open a file")
+        fileMenu.AppendSeparator()
+        menuSave = fileMenu.Append(wx.ID_SAVE, "&Save", "Save file")
+        menuSaveAs = fileMenu.Append(wx.ID_SAVEAS, "Save &As", "Save file as")
+        fileMenu.AppendSeparator()
+        menuClose = fileMenu.Append(wx.ID_EXIT, "&Quit", "Quit application")
 
 
-#All functions
-def newFile():
-    answer = tkMessageBox.askquestion(title="Save file", message="Do you want to save this file?")
-    #if yes first save then delete all
-    if(answer == True):
-        saveFile()
-    deleteAllOption()
+        #Edit Menu
+        editMenu = wx.Menu()
 
-def openFile():
-    newFile()
-    file = tkFileDialog.askopenfile()
-    text.insert(INSERT, file.read())
+        menuUndo = editMenu.Append(wx.ID_UNDO, "&Undo", "Undo previous action")
+        menuRedo = editMenu.Append(wx.ID_REDO, "&Redo", "Redo previous action")
+        editMenu.AppendSeparator()
+        menuCopy = editMenu.Append(wx.ID_COPY, "&Copy", "Copy selected item")
+        menuCut = editMenu.Append(wx.ID_CUT, "C&ut", "Cut selected item")
+        menuPaste = editMenu.Append(wx.ID_PASTE, "&Paste", "Paste selected item")
+        menuSelectAll = editMenu.Append(wx.ID_SELECTALL, "&Select All", "Select entire document")
 
-def saveFile():
-    filePath = tkFileDialog.asksaveasfilename()
-    writeFile = open(filePath, mode='w')
-    writeFile.write(text.get(0.0, END).rstrip())
+        #Help Menu
+        helpMenu = wx.Menu()
 
-def closeFile():
-    saveFile()
-    root.quit()
+        menuAbout = helpMenu.Append(wx.ID_ABOUT, "&About", "About this application")
+        helpMenu.AppendSeparator()
+        menuCode = helpMenu.Append(wx.ID_ANY, "&See Code", "View this application's source code")
 
-def selectAllOption():
-    #SELect all
-    text.tag_add(SEL, "0.0", END)
+        #showing menu
+        menuBar = wx.MenuBar()
+        menuBar.Append(fileMenu, "&File")
+        menuBar.Append(editMenu, "&Edit")
+        menuBar.Append(helpMenu, "&Help")
+        self.SetMenuBar(menuBar)
 
-def deleteAllOption():
-    text.delete(0.0, END)
+        self.SetBackgroundColour('black')
 
-def cutOption():
-    #need to clear pre cut stuff
-    root.clipboard_clear()
-    root.clipboard_append(string=text.selection_get())
-    #delete first to last character
-    text.delete(index1=SEL_FIRST, index2=SEL_LAST)
+        #color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND)
+        #self.SetBackgroundColour(color)
 
-#same as cut without the deletion
-def copyOption():
-    root.clipboard_clear()
-    root.clipboard_append(string=text.selection_get())
-
-def pasteOption():
-    text.insert(INSERT, root.clipboard_get())
-
-def deleteOption():
-    text.delete(index1=SEL_FIRST, index2=SEL_LAST)
-
-#window object
-root = Tk()
-
-root.title("Untitled")
-#window size
-root.minsize(width=400, height=400)
-
-#setting up textBox
-#highlightthickness to get rid of border
-#for some reason undo function won't work unless set to trueasdf
-text= Text(root, width=400, height=400, font=("Arial"), bd =5, highlightthickness=0, undo=True)
-
-#so it takes up full screen when size is increased
-text.pack(fill=BOTH)
+        self.Show()
 
 
-#DROPDOWNS
-menu = Menu(root)
-root.config(menu=menu)
-
-#File Menu
-fileMenu = Menu(menu)
-menu.add_cascade(label="File", menu=fileMenu)
-fileMenu.add_command(label="New...", command=newFile)
-fileMenu.add_command(label="Open...", command=openFile)
-fileMenu.add_separator()
-fileMenu.add_command(label="Save...", command=saveFile)
-fileMenu.add_separator()
-fileMenu.add_command(label="Close..", command=closeFile)
-
-#Edit Menu
-editMenu = Menu(menu)
-menu.add_cascade(label="Edit", menu=editMenu)
-editMenu.add_command(label="Undo", command=text.edit_undo)
-editMenu.add_command(label="Redo", command=text.edit_redo)
-editMenu.add_separator()
-editMenu.add_command(label="Cut", command=cutOption)
-editMenu.add_command(label="Copy", command=copyOption)
-editMenu.add_command(label="Paste", command=pasteOption)
-editMenu.add_command(label="Select All", command=selectAllOption)
-editMenu.add_separator()
-editMenu.add_command(label="Delete", command=deleteOption)
-
-#keep the editor running
-root.mainloop()
-
-
+app = wx.App()
+frame = MainWindow(None, 'Text Editor')
+app.MainLoop()
